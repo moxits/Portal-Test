@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel='stylesheet' href='/stylesheets/spectrum.css' />
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io({
+        query: {
+          id: '<%= title %>'
+        }
+      });
+      $(function(){
+          socket.on('newClick',function(obj){
+              console.log("socket found",obj); 
+              $('#'+obj.row+obj.col).css('background-color',obj.color);
+          })
+      });
+    </script>
+  </head>
+  <body>
+    <input type='text' id="custom" />
+    <input type="text" value="red" id="result"/> <button id="refresh">Refresh Grid</button>
+    <div id="tableContainer"></div>
+
+    
+    <script src="/javascripts/home.js"></script>
+    <script src='/javascripts/spectrum.js'></script>
+    <script>
+    
+   $("#custom").spectrum({
+    color: "#f00",
+    move: function(color){
+        var value = color.toRgbString();
+        console.log(value);
+        $('#result').val(color.toRgbString());
+    }
+    })
+    $(document).ready(function(){
+    function generateGrid( rows, cols ) {
+    var grid = "<table>";
+    for ( row = 1; row <= rows; row++ ) {
+        grid += "<tr>"; 
+        for ( col = 1; col <= cols; col++ ) {      
+            grid += "<td id="+row+col+"></td>";
+        }
+        grid += "</tr>"; 
+    }
+    return grid;
+}
+var numRows = 10;
+var numCols = 10;
+
+$( "#tableContainer" ).append( generateGrid( numRows, numCols) );
+
+
+$( "td" ).click(function() {
+    var index = $( "td" ).index( this );
+    var row = Math.floor( ( index ) / numRows) + 1;
+    var col = ( index % numCols ) + 1;
+    var value = $('#result').val();
+    var cellObject = {
+        row: row,
+        col:col,
+        color:value
+    }
+    $.ajax({
+        url:`/users/newClick/<%= title %>`,
+        type:"POST",
+        data:cellObject,
+    }).done(function(json){
+        console.log(json);
+    });
+    $( this ).css( 'background-color',value);
+    
+});
+  
+    $.ajax({
+            url:`/users/filled/<%= title %>`,
+            type:"GET"
+        }).done(function(json){
+            filled = json;
+            for (var i=0;i<filled.length;i++){
+                $('#'+filled[i].row+filled[i].col).css('background-color',filled[i].color);
+        }
+     });
+});
+    </script>
+    
+</body>
+</html>
